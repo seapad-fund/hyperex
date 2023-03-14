@@ -1,6 +1,7 @@
 /// Marker structures to use in LiquidityPool third generic.
 module liquidswap::curves {
-    use aptos_std::type_info;
+
+    use std::type_name;
 
     const ERR_INVALID_CURVE: u64 = 10001;
 
@@ -12,12 +13,12 @@ module liquidswap::curves {
 
     /// Check provided `Curve` type is Uncorrelated.
     public fun is_uncorrelated<Curve>(): bool {
-        type_info::type_of<Curve>() == type_info::type_of<Uncorrelated>()
+       type_name::get<Curve>() == type_name::get<Uncorrelated>()
     }
 
     /// Check provided `Curve` type is Stable.
     public fun is_stable<Curve>(): bool {
-        type_info::type_of<Curve>() == type_info::type_of<Stable>()
+        type_name::get<Curve>() == type_name::get<Stable>()
     }
 
     /// Is `Curve` type valid or not (means correct type used).

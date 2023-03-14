@@ -3,12 +3,16 @@ module liquidswap::coin_helper {
     use std::option;
     use std::string::{Self, String};
 
-    use aptos_framework::coin;
-    use aptos_std::comparator::{Self, Result};
-    use aptos_std::type_info;
-
     use liquidswap::curves::is_stable;
     use liquidswap::math;
+    use std::vector;
+    use std::type_name;
+    use sui::coin;
+    use liquidswap::comparator::Result;
+    use liquidswap::comparator;
+    use sui::coin::{CoinMetadata, TreasuryCap};
+    use sui::sui;
+    use sui::balance;
 
     // Errors codes.
 
@@ -22,35 +26,13 @@ module liquidswap::coin_helper {
     /// Length of symbol prefix to be used in LP coin symbol.
     const SYMBOL_PREFIX_LENGTH: u64 = 4;
 
-    /// Check if provided generic `CoinType` is a coin.
-    public fun assert_is_coin<CoinType>() {
-        assert!(coin::is_coin_initialized<CoinType>(), ERR_IS_NOT_COIN);
-    }
 
     /// Compare two coins, `X` and `Y`, using names.
     /// Caller should call this function to determine the order of X, Y.
     public fun compare<X, Y>(): Result {
-        let x_info = type_info::type_of<X>();
-        let y_info = type_info::type_of<Y>();
-
-        // 1. compare struct_name
-        let x_struct_name = type_info::struct_name(&x_info);
-        let y_struct_name = type_info::struct_name(&y_info);
-        let struct_cmp = comparator::compare(&x_struct_name, &y_struct_name);
-        if (!comparator::is_equal(&struct_cmp)) return struct_cmp;
-
-        // 2. if struct names are equal, compare module name
-        let x_module_name = type_info::module_name(&x_info);
-        let y_module_name = type_info::module_name(&y_info);
-        let module_cmp = comparator::compare(&x_module_name, &y_module_name);
-        if (!comparator::is_equal(&module_cmp)) return module_cmp;
-
-        // 3. if modules are equal, compare addresses
-        let x_address = type_info::account_address(&x_info);
-        let y_address = type_info::account_address(&y_info);
-        let address_cmp = comparator::compare(&x_address, &y_address);
-
-        address_cmp
+        let x = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
+        let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
+        comparator::compare(x, y)
     }
 
     /// Check that coins generics `X`, `Y` are sorted in correct ordering.
@@ -63,8 +45,8 @@ module liquidswap::coin_helper {
 
     /// Get supply for `CoinType`.
     /// Would throw error if supply for `CoinType` doesn't exist.
-    public fun supply<CoinType>(): u128 {
-        option::extract(&mut coin::supply<CoinType>())
+    public fun supply<CoinType>(treasury: &mut TreasuryCap<CoinType>): u64 {
+      balance::supply_value(coin::supply(treasury))
     }
 
     /// Generate LP coin name and symbol for pair `X`/`Y` and curve `Curve`.
@@ -79,17 +61,17 @@ module liquidswap::coin_helper {
     /// ```
     /// For example, for `LP<BTC, USDT, Uncorrelated>`,
     /// the result will be `(b"LiquidLP-BTC-USDT+", b"BTC-USDT+")`
-    public fun generate_lp_name_and_symbol<X, Y, Curve>(): (String, String) {
+    public fun generate_lp_name_and_symbol<X, Y, Curve>(metaX: &CoinMetadata<X>, metaY: &CoinMetadata<Y>): (String, String) {
         let lp_name = string::utf8(b"");
         string::append_utf8(&mut lp_name, b"LiquidLP-");
-        string::append(&mut lp_name, coin::symbol<X>());
+        string::append(&mut lp_name, string::from_ascii(coin::get_symbol(metaX)));
         string::append_utf8(&mut lp_name, b"-");
-        string::append(&mut lp_name, coin::symbol<Y>());
+        string::append(&mut lp_name, string::from_ascii(coin::get_symbol(metaY)));
 
         let lp_symbol = string::utf8(b"");
-        string::append(&mut lp_symbol, coin_symbol_prefix<X>());
+        string::append(&mut lp_symbol, coin_symbol_prefix<X>(metaX));
         string::append_utf8(&mut lp_symbol, b"-");
-        string::append(&mut lp_symbol, coin_symbol_prefix<Y>());
+        string::append(&mut lp_symbol, coin_symbol_prefix<Y>(metaY));
 
         let (curve_name, curve_symbol) = if (is_stable<Curve>()) (b"-S", b"*") else (b"-U", b"");
         string::append_utf8(&mut lp_name, curve_name);
@@ -98,9 +80,26 @@ module liquidswap::coin_helper {
         (lp_name, lp_symbol)
     }
 
-    fun coin_symbol_prefix<CoinType>(): String {
-        let symbol = coin::symbol<CoinType>();
+    fun coin_symbol_prefix<CoinType>(meta: &CoinMetadata<CoinType>): String {
+        let symbol = string::from_ascii(coin::get_symbol(meta));
         let prefix_length = math::min_u64(string::length(&symbol), SYMBOL_PREFIX_LENGTH);
         string::sub_string(&symbol, 0, prefix_length)
+    }
+
+    ///@todo review
+    public fun genPoolName<X, Y, Curve>(): vector<u8>{
+        let x = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
+        let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<Y>()));
+        let curve = std::ascii::as_bytes(&type_name::into_string(type_name::get<Curve>()));
+        let name = vector::empty<u8>();
+        vector::append(&mut name, *x);
+        vector::append(&mut name, *y);
+        vector::append(&mut name, *curve);
+        name
+    }
+
+    #[test]
+    fun testGenPoolName(){
+        ///@todo
     }
 }

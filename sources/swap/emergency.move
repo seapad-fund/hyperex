@@ -1,9 +1,11 @@
 /// The module allows for emergency stop Liquidswap operations.
 module liquidswap::emergency {
-    use std::signer;
     use liquidswap::global_config;
-    use aptos_framework::account::SignerCapability;
-    use aptos_framework::account;
+    use sui::tx_context::{TxContext, sender};
+    use sui::transfer::{transfer, share_object};
+    use sui::object;
+    use sui::object::UID;
+    use liquidswap::global_config::GlobalConfig;
 
     friend liquidswap::liquidity_pool;
 
@@ -23,69 +25,61 @@ module liquidswap::emergency {
     /// Should never occur.
     const ERR_UNREACHABLE: u64 = 4004;
 
-    struct IsEmergency has key {}
-
-    struct IsDisabled has key {}
-
-    struct EmergencyAccountCapability has key {
-        signer_cap: SignerCapability
+    struct IsEmergency has key, store {
+        id: UID,
+        emergency: bool,
+        disabled: bool
     }
 
-    public(friend) fun initialize(liquidswap_admin: &signer) {
-        assert!(signer::address_of(liquidswap_admin) == @liquidswap, ERR_UNREACHABLE);
+    struct EmergencyAccountCapability has key, store {
+        id: UID
+    }
 
-        let (_, signer_cap) =
-            account::create_resource_account(liquidswap_admin, b"emergency_account_seed");
-        move_to(liquidswap_admin, EmergencyAccountCapability { signer_cap });
+    ///@fixme review cap owner perm
+    public(friend) fun initialize(liquidswap_admin: address, ctx: &mut TxContext) {
+        assert!(liquidswap_admin == @liquidswap_admin, ERR_UNREACHABLE);
+        share_object(IsEmergency {
+            id: object::new(ctx),
+            emergency: false,
+            disabled: false});
+        transfer(EmergencyAccountCapability { id: object::new(ctx)}, liquidswap_admin); //@todo review cap
     }
 
     /// Pauses all operations.
-    public entry fun pause(account: &signer) acquires EmergencyAccountCapability {
-        assert!(!is_disabled(), ERR_DISABLED);
-        assert_no_emergency();
-
-        assert!(signer::address_of(account) == global_config::get_emergency_admin(), ERR_NO_PERMISSIONS);
-
-        let emergency_account_cap =
-            borrow_global<EmergencyAccountCapability>(@liquidswap);
-        let emergency_account = account::create_signer_with_capability(&emergency_account_cap.signer_cap);
-        move_to(&emergency_account, IsEmergency {});
+    public entry fun pause(emergency: &mut IsEmergency,  config: &mut GlobalConfig, ctx: &mut TxContext) {
+        assert!(!is_disabled(emergency), ERR_DISABLED);
+        assert_no_emergency(emergency);
+        assert!(sender(ctx) == global_config::get_emergency_admin(config), ERR_NO_PERMISSIONS); //@todo review cap
+        emergency.emergency = true;
     }
 
     /// Resumes all operations.
-    public entry fun resume(account: &signer) acquires IsEmergency {
-        assert!(!is_disabled(), ERR_DISABLED);
-
-        let account_addr = signer::address_of(account);
-        assert!(account_addr == global_config::get_emergency_admin(), ERR_NO_PERMISSIONS);
-        assert!(is_emergency(), ERR_NOT_EMERGENCY);
-
-        let IsEmergency {} = move_from<IsEmergency>(@liquidswap_emergency_account);
+    public entry fun resume(emergency: &mut IsEmergency, config: &GlobalConfig, ctx: &mut TxContext) {
+        assert!(!is_disabled(emergency), ERR_DISABLED);
+        assert!(sender(ctx) == global_config::get_emergency_admin(config), ERR_NO_PERMISSIONS); //@todo review cap
+        assert!(is_emergency(emergency), ERR_NOT_EMERGENCY);
+        emergency.emergency = false;
     }
 
     /// Get if it's paused or not.
-    public fun is_emergency(): bool {
-        exists<IsEmergency>(@liquidswap_emergency_account)
+    public fun is_emergency(emergency: &IsEmergency): bool {
+       emergency.emergency
     }
 
     /// Would abort if currently paused.
-    public fun assert_no_emergency() {
-        assert!(!is_emergency(), ERR_EMERGENCY);
+    public fun assert_no_emergency(emergency: &IsEmergency) {
+        assert!(!is_emergency(emergency), ERR_EMERGENCY);
     }
 
     /// Get if it's disabled or not.
-    public fun is_disabled(): bool {
-        exists<IsDisabled>(@liquidswap_emergency_account)
+    public fun is_disabled(emergency: &IsEmergency): bool {
+        emergency.disabled
     }
 
     /// Disable condition forever.
-    public entry fun disable_forever(account: &signer) acquires EmergencyAccountCapability {
-        assert!(!is_disabled(), ERR_DISABLED);
-        assert!(signer::address_of(account) == global_config::get_emergency_admin(), ERR_NO_PERMISSIONS);
-
-        let emergency_account_cap =
-            borrow_global<EmergencyAccountCapability>(@liquidswap);
-        let emergency_account = account::create_signer_with_capability(&emergency_account_cap.signer_cap);
-        move_to(&emergency_account, IsDisabled {});
+    public entry fun disable_forever(emergency: &mut IsEmergency, config: &mut GlobalConfig,  ctx: &mut TxContext) {
+        assert!(!is_disabled(emergency), ERR_DISABLED);
+        assert!(sender(ctx) == global_config::get_emergency_admin(config), ERR_NO_PERMISSIONS);
+        emergency.disabled = true;
     }
 }
