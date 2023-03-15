@@ -1,18 +1,18 @@
 //#[test_only]
-//module liquidswap::dao_storage_tests {
+//module hyperex::dao_storage_tests {
 //    use std::signer;
 //
 //    use aptos_framework::coin;
 //    use liquidswap_lp::lp_coin::LP;
 //
-//    use liquidswap::curves::Uncorrelated;
-//    use liquidswap::dao_storage;
-//    use liquidswap::liquidity_pool;
-//    use liquidswap::router;
+//    use hyperex::curves::Uncorrelated;
+//    use hyperex::dao_storage;
+//    use hyperex::liquidity_pool;
+//    use hyperex::router;
 //    use test_coin_admin::test_coins::{Self, BTC, USDT};
 //    use test_helpers::test_account::create_account;
 //    use test_helpers::test_pool;
-//    use liquidswap::global_config;
+//    use hyperex::global_config;
 //
 //    #[test]
 //    fun test_register() {

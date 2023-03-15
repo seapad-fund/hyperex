@@ -1,5 +1,5 @@
 //#[test_only]
-//module liquidswap::liquidity_pool_tests {
+//module hyperex::liquidity_pool_tests {
 //    use std::option;
 //    use std::signer;
 //    use std::string::utf8;
@@ -9,13 +9,13 @@
 //    use aptos_framework::timestamp;
 //    use liquidswap_lp::lp_coin::LP;
 //
-//    use liquidswap::coin_helper::supply;
-//    use liquidswap::curves::{Uncorrelated, Stable};
-//    use liquidswap::emergency;
-//    use liquidswap::global_config;
-//    use liquidswap::liquidity_pool;
-//    use liquidswap::curves;
-//    use liquidswap::coin_helper;
+//    use hyperex::coin_helper::supply;
+//    use hyperex::curves::{Uncorrelated, Stable};
+//    use hyperex::emergency;
+//    use hyperex::global_config;
+//    use hyperex::liquidity_pool;
+//    use hyperex::curves;
+//    use hyperex::coin_helper;
 //    use test_coin_admin::test_coins::{Self, USDT, BTC, USDC};
 //    use test_helpers::test_pool::{Self, initialize_liquidity_pool, create_liquidswap_admin};
 //

@@ -7,8 +7,8 @@
 //    use aptos_framework::genesis;
 //    use liquidswap_lp::lp_coin::LP;
 //
-//    use liquidswap::liquidity_pool;
-//    use liquidswap::lp_account;
+//    use hyperex::liquidity_pool;
+//    use hyperex::lp_account;
 //    use test_coin_admin::test_coins;
 //
 //    public fun create_lp_owner(): signer {

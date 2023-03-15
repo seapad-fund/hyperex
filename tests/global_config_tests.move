@@ -1,8 +1,8 @@
 //#[test_only]
-//module liquidswap::global_config_tests {
-//    use liquidswap::global_config;
-//    use liquidswap::curves::{Uncorrelated, Stable};
-//    use liquidswap::curves;
+//module hyperex::global_config_tests {
+//    use hyperex::global_config;
+//    use hyperex::curves::{Uncorrelated, Stable};
+//    use hyperex::curves;
 //    use aptos_framework::account;
 //
 //    struct InvalidCurve {}

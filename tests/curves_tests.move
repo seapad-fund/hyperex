@@ -1,6 +1,6 @@
 //#[test_only]
-//module liquidswap::curves_tests {
-//    use liquidswap::curves::{
+//module hyperex::curves_tests {
+//    use hyperex::curves::{
 //        Self,
 //        is_stable,
 //        Uncorrelated,

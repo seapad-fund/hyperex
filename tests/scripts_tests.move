@@ -1,13 +1,13 @@
 //#[test_only]
-//module liquidswap::scripts_tests {
+//module hyperex::scripts_tests {
 //    use std::signer;
 //
 //    use aptos_framework::coin;
 //
-//    use liquidswap::curves::Uncorrelated;
-//    use liquidswap::liquidity_pool;
-//    use liquidswap::router;
-//    use liquidswap::scripts;
+//    use hyperex::curves::Uncorrelated;
+//    use hyperex::liquidity_pool;
+//    use hyperex::router;
+//    use hyperex::scripts;
 //    use test_coin_admin::test_coins::{Self, USDT, BTC};
 //    use test_helpers::test_pool;
 //    use liquidswap_lp::lp_coin::LP;
