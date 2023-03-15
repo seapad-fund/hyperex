@@ -25,13 +25,14 @@ module hyperex::liquidity_pool {
     use std::vector;
     use sui::event;
     use hyperex::dao_storage::{Storages, Storage};
+    use sui::url::Url;
+
     #[test_only]
     use hyperex::curves::Uncorrelated;
 
     use sui::balance;
-    #[test_only]
-    use sui::url::Url;
     use hyperex::pool_coin;
+
     #[test_only]
     use hyperex::lp_coin;
 

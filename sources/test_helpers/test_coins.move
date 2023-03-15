@@ -1,17 +1,13 @@
-//#[test_only]
-//module test_coin_admin::test_coins {
+#[test_only]
+module test_coin_admin::test_coins {
 //    use std::string::utf8;
-//    use std::signer;
-//
-//    use aptos_framework::coin::{Self, Coin, MintCapability, BurnCapability};
-//    use aptos_framework::account;
-//
-//    struct BTC {}
-//
-//    struct USDT {}
-//
-//    struct USDC {}
-//
+
+    struct BTC {}
+
+    struct USDT {}
+
+    struct USDC {}
+
 //    struct Capabilities<phantom CoinType> has key {
 //        mint_cap: MintCapability<CoinType>,
 //        burn_cap: BurnCapability<CoinType>,
@@ -106,4 +102,4 @@
 //            coin::burn(coins, &caps.burn_cap);
 //        };
 //    }
-//}
+}

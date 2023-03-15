@@ -30,7 +30,7 @@ module hyperex::coin_helper {
     /// Caller should call this function to determine the order of X, Y.
     public fun compare<X, Y>(): Result {
         let x = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
-        let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
+        let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<Y>()));
         comparator::compare(x, y)
     }
 
