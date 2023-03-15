@@ -44,6 +44,7 @@ module liquidswap::scripts {
         coin_x_val_min: u64,
         coin_y: Coin<Y>,
         coin_y_val_min: u64,
+
         config: &GlobalConfig,
         pools: &mut Pools,
         daos: &mut Storages,
@@ -52,13 +53,14 @@ module liquidswap::scripts {
         timestamp_ms: u64,
         ctx: &mut TxContext
     ) {
-        let pool = router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
+        router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
         add_liquidity<X, Y, Curve>(
             coin_x,
             coin_x_val_min,
             coin_y,
             coin_y_val_min,
             timestamp_ms,
+            config,
             pools,
             ctx
         );
@@ -78,6 +80,7 @@ module liquidswap::scripts {
         coin_y: Coin<Y>,
         coin_y_val_min: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pools: &mut Pools,
         ctx: &mut TxContext
     ) {
@@ -88,6 +91,7 @@ module liquidswap::scripts {
                 coin_y,
                 coin_y_val_min,
                 timestamp_ms,
+                config,
                 liquidity_pool::getPool<X, Y, Curve>(pools),
                 ctx
             );
@@ -135,6 +139,7 @@ module liquidswap::scripts {
         coin_x: Coin<X>,
         coin_out_min_val: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pools: &mut Pools,
         daos: &mut Storages,
         ctx: &mut TxContext
@@ -143,6 +148,7 @@ module liquidswap::scripts {
             coin_x,
             coin_out_min_val,
             timestamp_ms,
+            config,
             liquidity_pool::getPool<X, Y, Curve>(pools),
             dao_storage::getDao<X, Y, Curve>(daos),
             ctx
@@ -159,6 +165,7 @@ module liquidswap::scripts {
         coin_x_max: Coin<X>,
         coin_out: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pools: &mut Pools,
         daos: &mut Storages,
         ctx: &mut TxContext
@@ -167,6 +174,7 @@ module liquidswap::scripts {
             coin_x_max,
             coin_out,
             timestamp_ms,
+            config,
             liquidity_pool::getPool<X, Y, Curve>(pools),
             dao_storage::getDao<X, Y, Curve>(daos),
             ctx
@@ -185,6 +193,7 @@ module liquidswap::scripts {
         coin_in: Coin<X>,
         coin_out: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pools: &mut Pools,
         daos: &mut Storages,
         ctx: &mut TxContext
@@ -192,6 +201,7 @@ module liquidswap::scripts {
         let coin_y = router::swap_coin_for_coin_unchecked<X, Y, Curve>(coin_in,
             coin_out,
             timestamp_ms,
+            config,
             liquidity_pool::getPool<X, Y, Curve>(pools),
             dao_storage::getDao<X, Y, Curve>(daos),
             ctx);

@@ -2,14 +2,13 @@
 /// Implements mint/burn liquidity, swap of coins.
 module liquidswap::liquidity_pool {
 
-    use liquidswap_lp::lp_coin::LP;
+    use liquidswap::lp_coin::LP;
     use u256::u256;
     use uq64x64::uq64x64;
 
     use liquidswap::coin_helper;
     use liquidswap::curves;
     use liquidswap::dao_storage;
-    use liquidswap::emergency::{Self, assert_no_emergency, IsEmergency};
     use liquidswap::global_config;
     use liquidswap::math;
     use liquidswap::stable_curve;
@@ -33,6 +32,7 @@ module liquidswap::liquidity_pool {
     use sui::balance;
     #[test_only]
     use liquidswap::lp_coin::LP;
+    use sui::url::Url;
 
     // Error codes.
 
@@ -100,6 +100,7 @@ module liquidswap::liquidity_pool {
         last_price_x_cumulative: u128,
         last_price_y_cumulative: u128,
         lp_treasury_cap: TreasuryCap<LP<X, Y, Curve>>,
+        lp_metadata: CoinMetadata<LP<X, Y, Curve>>,
         // Scales are pow(10, token_decimals).
         x_scale: u64,
         y_scale: u64,
@@ -135,14 +136,13 @@ module liquidswap::liquidity_pool {
         transfer(PoolAccountCapability { id: object::new(ctx), }, @liquidswap_admin);
 
         global_config::initialize(@liquidswap_admin, ctx);
-        emergency::initialize(@liquidswap_admin, ctx);
         dao_storage::initialize(@liquidswap_admin, ctx);
         share_object(Pools {id: object::new(ctx)});
     }
 
     ///@fixme review
-    fun isPoolExist<X, Y, Curve>(pools: &mut Pools){
-        dynamic_field::exists_(&pools.id, coin_helper::genPoolName<X,Y,Curve>());
+    fun isPoolExist<X, Y, Curve>(pools: &mut Pools): bool{
+        dynamic_field::exists_(&pools.id, coin_helper::genPoolName<X,Y,Curve>())
     }
 
     public fun getLPSupply<X,Y, Curve>(pool: &mut LiquidityPool<X, Y, Curve>): u64{
@@ -151,26 +151,35 @@ module liquidswap::liquidity_pool {
 
     /// Register liquidity pool `X`/`Y`.
     /// @fixme how to create witness dynamically ?
+    /// @fixme what happend if passed other shared pools/IsEmergency ?
     public fun register<X, Y, Curve>(witness: LP<X, Y, Curve>,
                                      config: &GlobalConfig,
                                      pools: &mut Pools,
                                      daoStores: &mut Storages,
                                      metaX: &CoinMetadata<X>,
                                      metaY: &CoinMetadata<Y>,
-                                     ctx: &mut TxContext): &mut LiquidityPool<X, Y, Curve>{
-        assert_no_emergency();
+                                     ctx: &mut TxContext){
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
         curves::assert_valid_curve<Curve>();
         assert!(!isPoolExist<X,Y,Curve>(pools), ERR_POOL_EXISTS_FOR_PAIR);
 
-        let (lp_name, lp_symbol) = coin_helper::generate_lp_name_and_symbol<X, Y, Curve>();
+        let (lp_name, lp_symbol) = coin_helper::generate_lp_name_and_symbol<X, Y, Curve>(metaX, metaY);
 
-        //@fixme destroy freeze cap
         //@fixme how to create witness ?
-        let (treasuryCap, coinMetadata) = coin::create_currency(witness,6,  *string::bytes(&lp_symbol), *string::bytes(&lp_name), b"description", option::none<>(), ctx);
+        let symbol_vec = *string::bytes(&lp_symbol);
+        let desc = b"LP token for ";
+        vector::append(&mut desc, symbol_vec);
 
+        let (treasuryCap, coinMetadata) = coin::create_currency(
+            witness,
+            6,
+            symbol_vec,
+            *string::bytes(&lp_name),
+            desc,
+            option::none<Url>(), ctx);
         let x_scale = 0;
         let y_scale = 0;
 
@@ -187,6 +196,7 @@ module liquidswap::liquidity_pool {
             last_price_x_cumulative: 0,
             last_price_y_cumulative: 0,
             lp_treasury_cap: treasuryCap,
+            lp_metadata: coinMetadata,
             x_scale,
             y_scale,
             locked: false,
@@ -201,9 +211,7 @@ module liquidswap::liquidity_pool {
         dao_storage::register<X, Y, Curve>(daoStores, ctx);
 
         ///events
-        event::emit(PoolCreatedEvent<X, Y, Curve> { creator: sender(ctx) }, );
-
-        &mut pool
+        event::emit(PoolCreatedEvent<X, Y, Curve> { creator: sender(ctx) });
     }
 
     /// Mint new liquidity coins.
@@ -215,9 +223,10 @@ module liquidswap::liquidity_pool {
     public fun mint<X, Y, Curve>(coin_x: Coin<X>,
                                  coin_y: Coin<Y>,
                                  timestamp_ms: u64,
+                                 config: &GlobalConfig,
                                  pool: &mut LiquidityPool<X, Y, Curve>,
                                  ctx: &mut TxContext): Coin<LP<X, Y, Curve>> {
-        assert_no_emergency();
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -317,11 +326,12 @@ module liquidswap::liquidity_pool {
         y_in: Coin<Y>,
         y_out: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         dao_storage: &mut Storage<X, Y, Curve>,
         ctx: &mut TxContext,
     ): (Coin<X>, Coin<Y>) {
-        assert_no_emergency();
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -388,9 +398,10 @@ module liquidswap::liquidity_pool {
     public fun flashloan<X, Y, Curve>(x_loan: u64,
                                       y_loan: u64,
                                       timestamp_ms: u64,
+                                      config: &GlobalConfig,
                                       pool: &mut LiquidityPool<X, Y, Curve>,
                                       ctx: &mut TxContext): (Coin<X>, Coin<Y>, Flashloan<X, Y, Curve>) {
-        assert_no_emergency();
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -424,11 +435,12 @@ module liquidswap::liquidity_pool {
         x_in: Coin<X>,
         y_in: Coin<Y>,
         loan: Flashloan<X, Y, Curve>,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         daoStorage: &mut Storage<X, Y, Curve>,
         ctx: &mut TxContext
     ) {
-        assert_no_emergency();
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -640,9 +652,9 @@ module liquidswap::liquidity_pool {
 
     /// Get reserves of a pool.
     /// Returns both (X, Y) reserves.
-    public fun get_reserves_size<X, Y, Curve>(pool: &LiquidityPool<X, Y, Curve>): (u64, u64)
+    public fun get_reserves_size<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): (u64, u64)
     {
-        assert_no_emergency();
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -658,9 +670,9 @@ module liquidswap::liquidity_pool {
     /// Cumulative prices can be overflowed, so take it into account before work with the following function.
     /// It's important to use same logic in your math/algo (as Move doesn't allow overflow).
     /// Returns (X price, Y price, block_timestamp).
-    public fun get_cumulative_prices<X, Y, Curve>(emergency: &IsEmergency, pool: &LiquidityPool<X, Y, Curve>): (u128, u128, u64)
+    public fun get_cumulative_prices<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): (u128, u128, u64)
     {
-        assert_no_emergency(emergency);
+        global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
@@ -739,8 +751,7 @@ module liquidswap::liquidity_pool {
     /// load pool from pools
 
     public fun getPool<X, Y, Curve>(pools: &mut Pools): &mut LiquidityPool<X, Y, Curve>{
-        let name = coin_helper    use liquidswap_lp::lp_coin::LP;
-::genPoolName<X, Y, Curve>();
+        let name = coin_helper::genPoolName<X, Y, Curve>();
         assert!(dynamic_field::exists_<vector<u8>>(&mut pools.id, name), ERR_POOL_DOES_NOT_EXIST);
         dynamic_field::borrow_mut<vector<u8>, LiquidityPool<X, Y, Curve>>(&mut pools.id, name)
     }
@@ -829,7 +840,7 @@ module liquidswap::liquidity_pool {
         ///@fixme
         register<X, Y, Uncorrelated>(witness, config, pools, daoStores, metaX, metaY, ctx);
 
-        let pool = borrow_global_mut<LiquidityPool<X, Y, curves::Uncorrelated>>(@liquidswap_pool_account);
+        let pool = borrow_global_mut<LiquidityPool<X, Y, Uncorrelated>>(@liquidswap_pool_account);
         pool.last_block_timestamp = prev_last_block_timestamp;
         pool.last_price_x_cumulative = prev_last_price_x_cumulative;
         pool.last_price_y_cumulative = prev_last_price_y_cumulative;

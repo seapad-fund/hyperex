@@ -25,6 +25,20 @@ module liquidswap::global_config {
     /// Unreachable, is a bug if thrown
     const ERR_UNREACHABLE: u64 = 303;
 
+
+    // Error codes.
+    /// When the wrong account attempted to create an emergency resource.
+    const ERR_NO_PERMISSIONS: u64 = 4000;
+
+    /// When attempted to execute operation during an emergency.
+    const ERR_EMERGENCY: u64 = 4001;
+
+    /// When emergency functional disabled.
+    const ERR_DISABLED: u64 = 4002;
+
+    /// When attempted to resume, but we are not in an emergency state.
+    const ERR_NOT_EMERGENCY: u64 = 4003;
+
     // Constants.
 
     /// Minimum value of fee, 0.01%
@@ -49,6 +63,8 @@ module liquidswap::global_config {
         default_uncorrelated_fee: u64,
         default_stable_fee: u64,
         default_dao_fee: u64,
+        emergency: bool,
+        disabled: bool
     }
 
     /// Initializes admin contracts when initializing the liquidity pool.
@@ -63,8 +79,49 @@ module liquidswap::global_config {
             default_uncorrelated_fee: 30,   // 0.3%
             default_stable_fee: 4,          // 0.04%
             default_dao_fee: 33,            // 33%
+            emergency: false,
+            disabled: false
         });
     }
+
+    /// Pauses all operations.
+    public entry fun emergency_pause(config: &mut GlobalConfig, ctx: &mut TxContext) {
+        assert!(!emergency_is_disabled(config), ERR_DISABLED);
+        assert_no_emergency(config);
+        assert!(sender(ctx) == get_emergency_admin(config), ERR_NO_PERMISSIONS); //@todo review cap
+        config.emergency = true;
+    }
+
+    /// Resumes all operations.
+    public entry fun emergency_resume(config: &mut GlobalConfig, ctx: &mut TxContext) {
+        assert!(!emergency_is_disabled(config), ERR_DISABLED);
+        assert!(sender(ctx) == get_emergency_admin(config), ERR_NO_PERMISSIONS); //@todo review cap
+        assert!(is_emergency(config), ERR_NOT_EMERGENCY);
+        config.emergency = false;
+    }
+
+    /// Disable condition forever.
+    public entry fun emergency_disable_forever(config: &mut GlobalConfig,  ctx: &mut TxContext) {
+        assert!(!emergency_is_disabled(config), ERR_DISABLED);
+        assert!(sender(ctx) == get_emergency_admin(config), ERR_NO_PERMISSIONS);
+        config.disabled = true;
+    }
+
+    /// Get if it's paused or not.
+    public fun is_emergency(config: &GlobalConfig): bool {
+        config.emergency
+    }
+
+    /// Would abort if currently paused.
+    public fun assert_no_emergency(config: &GlobalConfig) {
+        assert!(!is_emergency(config), ERR_EMERGENCY);
+    }
+
+    /// Get if it's disabled or not.
+    public fun emergency_is_disabled(config: &GlobalConfig): bool {
+        config.disabled
+    }
+
 
     /// Get DAO admin address.
     public fun get_dao_admin(config: &GlobalConfig): address {

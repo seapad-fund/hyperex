@@ -51,9 +51,9 @@ module liquidswap::router {
                                           daos: &mut Storages,
                                           metaX: &CoinMetadata<X>,
                                           metaY: &CoinMetadata<Y>,
-                                          ctx: &mut TxContext): &mut LiquidityPool<X, Y, Curve> {
+                                          ctx: &mut TxContext) {
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_COIN_ORDER);
-        liquidity_pool::register<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx)
+        liquidity_pool::register<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
     }
 
     /// Add liquidity to pool `X`/`Y` with rationality checks.
@@ -70,6 +70,7 @@ module liquidswap::router {
         coin_y: Coin<Y>,
         min_coin_y_val: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         ctx: &mut TxContext
     ): (Coin<X>, Coin<Y>, Coin<LP<X, Y, Curve>>) {
@@ -87,13 +88,14 @@ module liquidswap::router {
                 coin_y_val,
                 min_coin_x_val,
                 min_coin_y_val,
+                config,
                 pool
             );
 
         let coin_x_opt = coin::split(&mut coin_x, optimal_x, ctx);
         let coin_y_opt = coin::split(&mut coin_y, optimal_y, ctx);
 
-        let lp_coins = liquidity_pool::mint<X, Y, Curve>(coin_x_opt, coin_y_opt, timestamp_ms, pool, ctx);
+        let lp_coins = liquidity_pool::mint<X, Y, Curve>(coin_x_opt, coin_y_opt, timestamp_ms, config, pool, ctx);
         (coin_x, coin_y, lp_coins)
     }
 
@@ -135,19 +137,20 @@ module liquidswap::router {
         coin_in: Coin<X>,
         coin_out_min_val: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         dao_storage: &mut Storage<X, Y, Curve>,
         ctx: &mut TxContext
     ): Coin<Y> {
         let coin_in_val = coin::value(&coin_in);
-        let coin_out_val = get_amount_out<X, Y, Curve>(coin_in_val, pool);
+        let coin_out_val = get_amount_out<X, Y, Curve>(coin_in_val, config, pool);
 
         assert!(
             coin_out_val >= coin_out_min_val,
             ERR_COIN_OUT_NUM_LESS_THAN_EXPECTED_MINIMUM,
         );
 
-        let coin_out = swap_coin_for_coin_unchecked<X, Y, Curve>(coin_in, coin_out_val, timestamp_ms, pool, dao_storage, ctx);
+        let coin_out = swap_coin_for_coin_unchecked<X, Y, Curve>(coin_in, coin_out_val, timestamp_ms, config, pool, dao_storage, ctx);
         coin_out
     }
 
@@ -159,11 +162,12 @@ module liquidswap::router {
         coin_max_in: Coin<X>,
         coin_out_val: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         dao_storage: &mut Storage<X, Y, Curve>,
         ctx: &mut TxContext
     ): (Coin<X>, Coin<Y>) {
-        let coin_in_val_needed = get_amount_in<X, Y, Curve>(coin_out_val, pool);
+        let coin_in_val_needed = get_amount_in<X, Y, Curve>(coin_out_val, config, pool);
 
         let coin_val_max = coin::value(&coin_max_in);
         assert!(
@@ -172,7 +176,7 @@ module liquidswap::router {
         );
 
         let coin_in = coin::split(&mut coin_max_in, coin_in_val_needed, ctx);
-        let coin_out = swap_coin_for_coin_unchecked<X, Y, Curve>(coin_in, coin_out_val, timestamp_ms, pool, dao_storage, ctx);
+        let coin_out = swap_coin_for_coin_unchecked<X, Y, Curve>(coin_in, coin_out_val, timestamp_ms, config, pool, dao_storage, ctx);
 
         (coin_max_in, coin_out)
     }
@@ -186,6 +190,7 @@ module liquidswap::router {
         coin_in: Coin<X>,
         coin_out_val: u64,
         timestamp_ms: u64,
+        config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         dao_storage: &mut Storage<X, Y, Curve>,
         ctx: &mut TxContext,
@@ -198,6 +203,7 @@ module liquidswap::router {
             coin::zero(ctx),
             coin_out_val,
             timestamp_ms,
+            config,
             pool,
             dao_storage,
             ctx);
@@ -218,16 +224,16 @@ module liquidswap::router {
 
     /// Get current cumulative prices in liquidity pool `X`/`Y`.
     /// Returns (X price, Y price, block_timestamp).
-    public fun get_cumulative_prices<X, Y, Curve>(pool: &LiquidityPool<X, Y, Curve>): (u128, u128, u64) {
+    public fun get_cumulative_prices<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): (u128, u128, u64) {
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_COIN_ORDER);
-        liquidity_pool::get_cumulative_prices<X, Y, Curve>(pool)
+        liquidity_pool::get_cumulative_prices<X, Y, Curve>(config, pool)
     }
 
     /// Get reserves of liquidity pool (`X` and `Y`).
     /// Returns current reserves (`X`, `Y`).
-    public fun get_reserves_size<X, Y, Curve>(pool: &LiquidityPool<X, Y, Curve>): (u64, u64) {
+    public fun get_reserves_size<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): (u64, u64) {
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_COIN_ORDER);
-        liquidity_pool::get_reserves_size<X, Y, Curve>(pool)
+        liquidity_pool::get_reserves_size<X, Y, Curve>(config, pool)
     }
 
     /// Get fee for specific pool together with denominator (numerator, denominator).
@@ -277,9 +283,10 @@ module liquidswap::router {
         y_desired: u64,
         x_min: u64,
         y_min: u64,
+        config: &GlobalConfig,
         pool: &LiquidityPool<X, Y, Curve>
     ): (u64, u64) {
-        let (reserves_x, reserves_y) = get_reserves_size<X, Y, Curve>(pool);
+        let (reserves_x, reserves_y) = get_reserves_size<X, Y, Curve>(config, pool);
 
         if (reserves_x == 0 && reserves_y == 0) {
             return (x_desired, y_desired)
@@ -320,10 +327,11 @@ module liquidswap::router {
     /// Returns both `X` and `Y` coins amounts.
     public fun get_reserves_for_lp_coins<X, Y, Curve>(
         lp_to_burn_val: u64,
+        config: &GlobalConfig,
         pools: &mut Pools
     ): (u64, u64) {
         let pool = liquidity_pool::getPool<X, Y, Curve>(pools);
-        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(pool);
+        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(config, pool);
         let lp_coins_total = liquidity_pool::getLPSupply<X, Y, Curve>(pool);
 
         let x_to_return_val = math::mul_div_u128((lp_to_burn_val as u128), (x_reserve as u128), (lp_coins_total as u128));
@@ -340,8 +348,8 @@ module liquidswap::router {
     /// We recommend to do implement such kind of logic offchain.
     /// * `amount_x` - amount to swap.
     /// Returns amount of `Y` coins getting after swap.
-    public fun get_amount_out<X, Y, Curve>(amount_in: u64, pool: &LiquidityPool<X, Y, Curve>): u64 {
-        let (reserve_x, reserve_y) = get_reserves_size<X, Y, Curve>(pool);
+    public fun get_amount_out<X, Y, Curve>(amount_in: u64,  config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): u64 {
+        let (reserve_x, reserve_y) = get_reserves_size<X, Y, Curve>(config, pool);
         let (scale_x, scale_y) = get_decimals_scales<X, Y, Curve>(pool);
         get_coin_out_with_fees<X, Y, Curve>(
             amount_in,
@@ -360,8 +368,8 @@ module liquidswap::router {
     /// We recommend to do implement such kind of logic offchain.
     /// * `amount_x` - amount to swap.
     /// Returns amount of `X` coins needed.
-    public fun get_amount_in<X, Y, Curve>(amount_out: u64, pool: &LiquidityPool<X, Y, Curve>): u64 {
-        let (reserve_x, reserve_y) = get_reserves_size<X, Y, Curve>(pool);
+    public fun get_amount_in<X, Y, Curve>(amount_out: u64,  config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): u64 {
+        let (reserve_x, reserve_y) = get_reserves_size<X, Y, Curve>(config, pool);
         let (scale_x, scale_y) = get_decimals_scales<X, Y, Curve>(pool);
         get_coin_in_with_fees<X, Y, Curve>(
             amount_out,
@@ -486,8 +494,8 @@ module liquidswap::router {
     }
 
     #[test_only]
-    public fun current_price<X, Y, Curve>(pool: &LiquidityPool<X, Y, Curve>): u128 {
-        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(pool);
+    public fun current_price<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): u128 {
+        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(config, pool);
         ((x_reserve / y_reserve) as u128)
     }
 }
