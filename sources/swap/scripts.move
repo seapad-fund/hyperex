@@ -12,6 +12,7 @@ module liquidswap::scripts {
     use liquidswap::liquidity_pool;
     use liquidswap::dao_storage;
     use liquidswap::lp_coin::LP;
+    use liquidswap::lp_coin;
 
     ///Witness
     /// @todo review
@@ -21,13 +22,14 @@ module liquidswap::scripts {
     /// Register a new liquidity pool for `X`/`Y` pair.
     ///
     /// Note: X, Y generic coin parameters must be sorted.
-    public entry fun register_pool<X, Y, Curve>(witness: LP<X, Y, Curve>,
-                                                config: &GlobalConfig,
+    public entry fun register_pool<X, Y, Curve>(config: &GlobalConfig,
                                                 pools: &mut Pools,
                                                 daos: &mut Storages,
                                                 metaX: &CoinMetadata<X>,
                                                 metaY: &CoinMetadata<Y>,
                                                 ctx: &mut TxContext) {
+        //@fixme how to create a witness ?
+        let witness =  lp_coin::createWitness<X, Y, Curve>();
         router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
     }
 
@@ -39,7 +41,6 @@ module liquidswap::scripts {
     ///
     /// Note: X, Y generic coin parameters must be sorted.
     public entry fun register_pool_and_add_liquidity<X, Y, Curve>(
-        witness: LP<X, Y, Curve>,
         coin_x: Coin<X>,
         coin_x_val_min: u64,
         coin_y: Coin<Y>,
@@ -53,6 +54,7 @@ module liquidswap::scripts {
         timestamp_ms: u64,
         ctx: &mut TxContext
     ) {
+        let witness = lp_coin::createWitness<X, Y, Curve>();
         router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
         add_liquidity<X, Y, Curve>(
             coin_x,
