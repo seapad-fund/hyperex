@@ -1,19 +1,17 @@
 /// The `CoinHelper` module contains helper funcs to work with `AptosFramework::Coin` module.
-module liquidswap::coin_helper {
-    use std::option;
+module hyperex::coin_helper {
     use std::string::{Self, String};
 
-    use liquidswap::curves::is_stable;
-    use liquidswap::math;
+    use hyperex::curves::is_stable;
+    use hyperex::math;
     use std::vector;
     use std::type_name;
     use sui::coin;
-    use liquidswap::comparator::Result;
-    use liquidswap::comparator;
+    use hyperex::comparator::Result;
+    use hyperex::comparator;
     use sui::coin::{CoinMetadata, TreasuryCap};
-    use sui::sui;
     use sui::balance;
-    use liquidswap::pool_coin;
+    use hyperex::pool_coin;
 
     // Errors codes.
 
@@ -105,6 +103,6 @@ module liquidswap::coin_helper {
 
     #[test]
     fun testGenPoolName(){
-        ///@todo
+        //@todo
     }
 }

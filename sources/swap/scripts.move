@@ -1,25 +1,16 @@
 /// The current module contains pre-deplopyed scripts v2 for LiquidSwap.
-module liquidswap::scripts {
-    use liquidswap::router;
+module hyperex::scripts {
+    use hyperex::router;
     use sui::tx_context::{TxContext, sender};
-    use sui::coin;
     use sui::coin::{Coin, CoinMetadata};
     use sui::transfer::transfer;
-    use liquidswap::global_config::GlobalConfig;
-    use liquidswap::liquidity_pool::{Pools, LiquidityPool};
-    use liquidswap::dao_storage::{Storages, Storage};
-    use liquidswap::coin_helper;
-    use liquidswap::liquidity_pool;
-    use liquidswap::dao_storage;
-    use liquidswap::lp_coin::LP;
-    use liquidswap::lp_coin;
-    use liquidswap::pool_coin;
+    use hyperex::global_config::GlobalConfig;
+    use hyperex::liquidity_pool::{Pools, LiquidityPool};
+    use hyperex::dao_storage::{Storages, Storage};
+    use hyperex::lp_coin::LP;
+    use hyperex::lp_coin;
+    use hyperex::pool_coin;
 
-    ///Witness
-    /// @todo review
-    struct SCRIPT_V2<phantom X, phantom Y, phantom Curve> has drop {
-
-    }
     /// Register a new liquidity pool for `X`/`Y` pair.
     ///
     /// Note: X, Y generic coin parameters must be sorted.
@@ -29,7 +20,6 @@ module liquidswap::scripts {
                                                 metaX: &CoinMetadata<X>,
                                                 metaY: &CoinMetadata<Y>,
                                                 ctx: &mut TxContext) {
-        //@fixme how to create a witness ?
         let witness =  lp_coin::createWitness<X, Y, Curve>();
         router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
     }
@@ -95,7 +85,7 @@ module liquidswap::scripts {
                 coin_y_val_min,
                 timestamp_ms,
                 config,
-                liquidity_pool::getPool<X, Y, Curve>(pools),
+                pools,
                 ctx
             );
 
@@ -107,7 +97,7 @@ module liquidswap::scripts {
     }
 
     /// Remove (burn) liquidity coins `LP` from account, get `X` and`Y` coins back.
-    /// * `lp_val` - amount of `LP` coins to burn.
+    /// * `lp_coins` - amount of `LP` coins to burn.
     /// * `min_x_out_val` - minimum amount of X coins to get.
     /// * `min_y_out_val` - minimum amount of Y coins to get.
     ///
@@ -116,6 +106,7 @@ module liquidswap::scripts {
         lp_coins: pool_coin::Coin<LP<X, Y, Curve>>,
         min_x_out_val: u64,
         min_y_out_val: u64,
+
         pools: &mut Pools,
         timestamp_ms: u64,
         ctx: &mut TxContext
@@ -124,7 +115,7 @@ module liquidswap::scripts {
             lp_coins,
             min_x_out_val,
             min_y_out_val,
-            liquidity_pool::getPool<X, Y, Curve>(pools),
+            pools,
             timestamp_ms,
             ctx
         );
@@ -152,8 +143,8 @@ module liquidswap::scripts {
             coin_out_min_val,
             timestamp_ms,
             config,
-            liquidity_pool::getPool<X, Y, Curve>(pools),
-            dao_storage::getDao<X, Y, Curve>(daos),
+            pools,
+            daos,
             ctx
         );
 
@@ -178,8 +169,8 @@ module liquidswap::scripts {
             coin_out,
             timestamp_ms,
             config,
-            liquidity_pool::getPool<X, Y, Curve>(pools),
-            dao_storage::getDao<X, Y, Curve>(daos),
+            pools,
+            daos,
             ctx
         );
 
@@ -205,8 +196,8 @@ module liquidswap::scripts {
             coin_out,
             timestamp_ms,
             config,
-            liquidity_pool::getPool<X, Y, Curve>(pools),
-            dao_storage::getDao<X, Y, Curve>(daos),
+            pools,
+            daos,
             ctx);
         let account_addr = sender(ctx);
         transfer(coin_y, account_addr);

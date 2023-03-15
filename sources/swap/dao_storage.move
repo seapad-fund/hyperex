@@ -1,5 +1,5 @@
-module liquidswap::dao_storage {
-    use liquidswap::global_config;
+module hyperex::dao_storage {
+    use hyperex::global_config;
     use sui::coin::Coin;
     use sui::object::UID;
     use sui::tx_context::{TxContext, sender};
@@ -7,11 +7,11 @@ module liquidswap::dao_storage {
     use sui::coin;
     use sui::event;
     use sui::transfer::share_object;
-    use liquidswap::coin_helper;
+    use hyperex::coin_helper;
     use sui::dynamic_field;
-    use liquidswap::global_config::GlobalConfig;
+    use hyperex::global_config::GlobalConfig;
 
-    friend liquidswap::liquidity_pool;
+    friend hyperex::liquidity_pool;
 
     // Error codes.
 
@@ -56,14 +56,13 @@ module liquidswap::dao_storage {
     /// Register storage
     /// Parameters:
     /// * `owner` - owner of storage
-    /// @fixme review shared resource
-    public(friend) fun register<X, Y, Curve>(storages: &mut Storages, ctx: &mut TxContext){
-        let storage = Storage<X, Y, Curve> {
+    public(friend) fun register<X, Y, Curve>(daos: &mut Storages, ctx: &mut TxContext){
+        let dao = Storage<X, Y, Curve> {
             id : object::new(ctx),
             coin_x: coin::zero<X>(ctx),
             coin_y: coin::zero<Y>(ctx)
         };
-        dynamic_field::add(&mut storages.id, coin_helper::genPoolName<X, Y, Curve>(), storage);
+        dynamic_field::add(&mut daos.id, coin_helper::genPoolName<X, Y, Curve>(), dao);
         event::emit(StorageCreatedEvent<X, Y, Curve> {});
     }
 

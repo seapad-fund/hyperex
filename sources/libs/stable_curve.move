@@ -1,5 +1,5 @@
 /// Implements stable curve math.
-module liquidswap::stable_curve {
+module hyperex::stable_curve {
     // !!!FOR AUDITOR!!!
     // Please, review this file really carefully and detailed.
     // Some of the functions just migrated from Solidly (BaseV1-core).

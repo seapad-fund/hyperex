@@ -1,5 +1,5 @@
 /// Marker structures to use in LiquidityPool third generic.
-module liquidswap::curves {
+module hyperex::curves {
 
     use std::type_name;
 

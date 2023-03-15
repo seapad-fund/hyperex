@@ -1,4 +1,4 @@
-spec liquidswap::math {
+spec hyperex::math {
     spec overflow_add {
         ensures result <= MAX_U128;
         ensures a + b <= MAX_U128 ==> result == a + b;

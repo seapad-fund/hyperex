@@ -1,5 +1,5 @@
 /// Provides a framework for comparing two elements
-module liquidswap::comparator {
+module hyperex::comparator {
     use std::bcs;
     use std::vector;
 

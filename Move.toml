@@ -1,9 +1,9 @@
 [package]
-name = "Liquidswap"
+name = "HyperEx"
 version = "0.0.1"
 
 [addresses]
-liquidswap = "0x00"
+hyperex = "0x00"
 u256="0x00"
 uq64x64="0x00"
 

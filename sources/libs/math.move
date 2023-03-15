@@ -1,5 +1,5 @@
 /// Implementation of math functions needed for Multi Swap.
-module liquidswap::math {
+module hyperex::math {
     // Errors codes.
 
     /// When trying to divide by zero.
