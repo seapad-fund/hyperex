@@ -11,7 +11,7 @@ module hyperex::router {
     use sui::tx_context::TxContext;
     use hyperex::liquidity_pool::{LiquidityPool, Pools};
     use hyperex::global_config::GlobalConfig;
-    use hyperex::dao_storage::{Storages, Storage};
+    use hyperex::dao_storage::{Storages};
     use hyperex::lp_coin::LP;
     use hyperex::pool_coin;
     use hyperex::dao_storage;

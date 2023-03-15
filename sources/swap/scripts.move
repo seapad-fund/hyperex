@@ -5,8 +5,8 @@ module hyperex::scripts {
     use sui::coin::{Coin, CoinMetadata};
     use sui::transfer::transfer;
     use hyperex::global_config::GlobalConfig;
-    use hyperex::liquidity_pool::{Pools, LiquidityPool};
-    use hyperex::dao_storage::{Storages, Storage};
+    use hyperex::liquidity_pool::{Pools};
+    use hyperex::dao_storage::{Storages};
     use hyperex::lp_coin::LP;
     use hyperex::lp_coin;
     use hyperex::pool_coin;

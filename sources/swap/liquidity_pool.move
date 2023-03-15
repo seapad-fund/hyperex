@@ -14,9 +14,9 @@ module hyperex::liquidity_pool {
     use hyperex::stable_curve;
     use sui::object::UID;
     use sui::tx_context::{TxContext, sender};
-    use sui::transfer::{transfer, share_object};
+    use sui::transfer::share_object;
     use sui::object;
-    use sui::coin::{Coin, CoinMetadata, TreasuryCap, supply};
+    use sui::coin::{Coin, CoinMetadata};
     use sui::coin;
     use std::option;
     use std::string;
@@ -27,8 +27,7 @@ module hyperex::liquidity_pool {
     use hyperex::dao_storage::{Storages, Storage};
     #[test_only]
     use hyperex::curves::Uncorrelated;
-    #[test_only]
-    use sui::test_scenario;
+
     use sui::balance;
     #[test_only]
     use sui::url::Url;

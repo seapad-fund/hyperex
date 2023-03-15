@@ -50,7 +50,7 @@ module uq64x64::uq64x64_tests {
     }
 
     #[test]
-    #[expected_failure(abort_code = 100)]
+    #[expected_failure(abort_code = uq64x64::uq64x64::ERR_DIVIDE_BY_ZERO)]
     fun test_fail_fraction() {
         let a = uq64x64::fraction(256, 0);
         uq64x64::to_u128(a);
@@ -64,8 +64,9 @@ module uq64x64::uq64x64_tests {
         assert!(uq64x64::decode(z) == 32, 1);
     }
 
+
     #[test]
-    #[expected_failure(abort_code = 100)]
+    #[expected_failure(abort_code = uq64x64::uq64x64::ERR_DIVIDE_BY_ZERO)]
     fun test_fail_div() {
         let a = uq64x64::encode(1);
         uq64x64::div(a, 0);

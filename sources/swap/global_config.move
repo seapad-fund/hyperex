@@ -1,13 +1,11 @@
 /// The global config for liquidswap: fees and manager accounts (admins).
 module hyperex::global_config {
     use hyperex::curves;
-    use sui::transfer::{transfer, share_object};
+    use sui::transfer::{share_object};
     use sui::object::UID;
     use sui::object;
     use sui::tx_context::{TxContext, sender};
     use sui::event;
-    #[test_only]
-    use sui::test_scenario;
 
     friend hyperex::liquidity_pool;
 
