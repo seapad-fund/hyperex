@@ -33,6 +33,7 @@ module liquidswap::liquidity_pool {
     #[test_only]
     use liquidswap::lp_coin::LP;
     use sui::url::Url;
+    use liquidswap::pool_coin;
 
     // Error codes.
 
@@ -99,8 +100,8 @@ module liquidswap::liquidity_pool {
         last_block_timestamp: u64,
         last_price_x_cumulative: u128,
         last_price_y_cumulative: u128,
-        lp_treasury_cap: TreasuryCap<LP<X, Y, Curve>>,
-        lp_metadata: CoinMetadata<LP<X, Y, Curve>>,
+        lp_treasury_cap: pool_coin::TreasuryCap<LP<X, Y, Curve>>,
+        lp_metadata: pool_coin::CoinMetadata<LP<X, Y, Curve>>,
         // Scales are pow(10, token_decimals).
         x_scale: u64,
         y_scale: u64,
@@ -132,11 +133,11 @@ module liquidswap::liquidity_pool {
     ///@todo the most important stuff: setup roles
     /// Initializes Liquidswap contracts.
     fun init(_witness: LIQUIDITY_POOL, ctx: &mut TxContext){
-        assert!(sender(ctx) == @liquidswap_admin, ERR_NOT_ENOUGH_PERMISSIONS_TO_INITIALIZE);
-        transfer(PoolAccountCapability { id: object::new(ctx), }, @liquidswap_admin);
+        assert!(sender(ctx) == @dex_admin, ERR_NOT_ENOUGH_PERMISSIONS_TO_INITIALIZE);
+        transfer(PoolAccountCapability { id: object::new(ctx), }, @dex_admin);
 
-        global_config::initialize(@liquidswap_admin, ctx);
-        dao_storage::initialize(@liquidswap_admin, ctx);
+        global_config::initialize(@dex_admin, ctx);
+        dao_storage::initialize(@dex_admin, ctx);
         share_object(Pools {id: object::new(ctx)});
     }
 
@@ -146,7 +147,7 @@ module liquidswap::liquidity_pool {
     }
 
     public fun getLPSupply<X,Y, Curve>(pool: &mut LiquidityPool<X, Y, Curve>): u64{
-        balance::supply_value(supply(&mut pool.lp_treasury_cap))
+        balance::supply_value(pool_coin::supply(&mut pool.lp_treasury_cap))
     }
 
     /// Register liquidity pool `X`/`Y`.
@@ -168,12 +169,10 @@ module liquidswap::liquidity_pool {
 
         let (lp_name, lp_symbol) = coin_helper::generate_lp_name_and_symbol<X, Y, Curve>(metaX, metaY);
 
-        //@fixme how to create witness ?
         let symbol_vec = *string::bytes(&lp_symbol);
         let desc = b"LP token for ";
         vector::append(&mut desc, symbol_vec);
-
-        let (treasuryCap, coinMetadata) = coin::create_currency(
+        let (treasuryCap, coinMetadata) = pool_coin::create_currency(
             witness,
             6,
             symbol_vec,
@@ -225,14 +224,14 @@ module liquidswap::liquidity_pool {
                                  timestamp_ms: u64,
                                  config: &GlobalConfig,
                                  pool: &mut LiquidityPool<X, Y, Curve>,
-                                 ctx: &mut TxContext): Coin<LP<X, Y, Curve>> {
+                                 ctx: &mut TxContext): pool_coin::Coin<LP<X, Y, Curve>> {
         global_config::assert_no_emergency(config);
 
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
 
         assert_pool_unlocked<X, Y, Curve>(pool);
 
-        let lp_coins_total = coin_helper::supply<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap);
+        let lp_coins_total = coin_helper::supply_poolcoin<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap);
 
         let x_reserve_size = coin::value(&pool.coin_x_reserve);
         let y_reserve_size = coin::value(&pool.coin_y_reserve);
@@ -257,8 +256,7 @@ module liquidswap::liquidity_pool {
 
         coin::join(&mut pool.coin_x_reserve, coin_x);
         coin::join(&mut pool.coin_y_reserve, coin_y);
-
-        let lp_coins = coin::mint<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap, provided_liq, ctx);
+        let lp_coins = pool_coin::mint<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap, provided_liq, ctx);
 
         update_oracle<X, Y, Curve>(x_reserve_size, y_reserve_size, pool, timestamp_ms);
 
@@ -275,7 +273,7 @@ module liquidswap::liquidity_pool {
     /// Burn liquidity coins (LP) and get back X and Y coins from reserves.
     /// * `lp_coins` - LP coins to burn.
     /// Returns both X and Y coins - `(Coin<X>, Coin<Y>)`.
-    public fun burn<X, Y, Curve>(lp_coins: Coin<LP<X, Y, Curve>>,
+    public fun burn<X, Y, Curve>(lp_coins: pool_coin::Coin<LP<X, Y, Curve>>,
                                  pool: &mut LiquidityPool<X, Y, Curve>,
                                  timestamp_ms: u64,
                                  ctx: &mut TxContext): (Coin<X>, Coin<Y>)
@@ -284,9 +282,9 @@ module liquidswap::liquidity_pool {
 
         assert_pool_unlocked<X, Y, Curve>(pool);
 
-        let burned_lp_coins_val = coin::value(&lp_coins);
+        let burned_lp_coins_val = pool_coin::value(&lp_coins);
 
-        let lp_coins_total = coin_helper::supply<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap);
+        let lp_coins_total = coin_helper::supply_poolcoin<LP<X, Y, Curve>>(&mut pool.lp_treasury_cap);
         let x_reserve_val = coin::value(&pool.coin_x_reserve);
         let y_reserve_val = coin::value(&pool.coin_y_reserve);
 
@@ -300,7 +298,7 @@ module liquidswap::liquidity_pool {
         let y_coin_to_return = coin::split(&mut pool.coin_y_reserve, y_to_return_val, ctx);
 
         update_oracle<X, Y, Curve>(x_reserve_val, y_reserve_val, pool, timestamp_ms);
-        coin::burn(&mut pool.lp_treasury_cap, lp_coins);
+        pool_coin::burn(&mut pool.lp_treasury_cap, lp_coins);
 
         event::emit(
             LiquidityRemovedEvent<X, Y, Curve> {

@@ -5,7 +5,6 @@ module liquidswap::dao_storage {
     use sui::tx_context::{TxContext, sender};
     use sui::object;
     use sui::coin;
-    use sui::transfer;
     use sui::event;
     use sui::transfer::share_object;
     use liquidswap::coin_helper;
@@ -41,7 +40,7 @@ module liquidswap::dao_storage {
 
     /// Initializes admin contracts when initializing the liquidity pool.
     public(friend) fun initialize(dex_admin: address, ctx: &mut TxContext) {
-        assert!(dex_admin == @liquidswap_admin, ERR_UNREACHABLE);
+        assert!(dex_admin == @dex_admin, ERR_UNREACHABLE);
         share_object(Storages {
             id: object::new(ctx)
         });

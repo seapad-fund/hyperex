@@ -69,7 +69,7 @@ module liquidswap::global_config {
 
     /// Initializes admin contracts when initializing the liquidity pool.
     public(friend) fun initialize(dex_admin: address, ctx: &mut TxContext) {
-        assert!(dex_admin == @liquidswap_admin, ERR_UNREACHABLE);
+        assert!(dex_admin == @dex_admin, ERR_UNREACHABLE);
         share_object(GlobalConfig {
             id: object::new(ctx),
             dex_admin,
@@ -227,6 +227,6 @@ module liquidswap::global_config {
     public fun initialize_for_test(ctx: &mut TxContext) {
         //@todo create account for test
 //        let liquidswap_admin = aptos_framework::account::create_account_for_test(@liquidswap);
-        initialize(@liquidswap_admin, ctx);
+        initialize(@dex_admin, ctx);
     }
 }

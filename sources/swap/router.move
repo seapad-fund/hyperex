@@ -1,7 +1,7 @@
 /// Router v2 for Liquidity Pool, similar to Uniswap router.
 module liquidswap::router {
 
-    use liquidswap::coin_helper::{Self, supply};
+    use liquidswap::coin_helper::{Self};
     use liquidswap::curves;
     use liquidswap::math;
     use liquidswap::stable_curve;
@@ -13,6 +13,7 @@ module liquidswap::router {
     use liquidswap::global_config::GlobalConfig;
     use liquidswap::dao_storage::{Storages, Storage};
     use liquidswap::lp_coin::LP;
+    use liquidswap::pool_coin;
 
     // Errors codes.
 
@@ -73,7 +74,7 @@ module liquidswap::router {
         config: &GlobalConfig,
         pool: &mut LiquidityPool<X, Y, Curve>,
         ctx: &mut TxContext
-    ): (Coin<X>, Coin<Y>, Coin<LP<X, Y, Curve>>) {
+    ): (Coin<X>, Coin<Y>, pool_coin::Coin<LP<X, Y, Curve>>) {
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_COIN_ORDER);
 
         let coin_x_val = coin::value(&coin_x);
@@ -107,7 +108,7 @@ module liquidswap::router {
     ///
     /// Note: X, Y generic coin parameteres should be sorted.
     public fun remove_liquidity<X, Y, Curve>(
-        lp_coins: Coin<LP<X, Y, Curve>>,
+        lp_coins: pool_coin::Coin<LP<X, Y, Curve>>,
         min_x_out_val: u64,
         min_y_out_val: u64,
         pool: &mut LiquidityPool<X, Y, Curve>,

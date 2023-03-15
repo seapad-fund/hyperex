@@ -13,6 +13,7 @@ module liquidswap::coin_helper {
     use sui::coin::{CoinMetadata, TreasuryCap};
     use sui::sui;
     use sui::balance;
+    use liquidswap::pool_coin;
 
     // Errors codes.
 
@@ -46,9 +47,13 @@ module liquidswap::coin_helper {
     /// Get supply for `CoinType`.
     /// Would throw error if supply for `CoinType` doesn't exist.
     public fun supply<CoinType>(treasury: &mut TreasuryCap<CoinType>): u64 {
-      balance::supply_value(coin::supply(treasury))
+        balance::supply_value(coin::supply(treasury))
     }
 
+    /// Get supply for `CoinType`. Coin is Poolcoin
+    public fun supply_poolcoin<CoinType>(treasury: &mut pool_coin::TreasuryCap<CoinType>): u64 {
+        balance::supply_value(pool_coin::supply(treasury))
+    }
     /// Generate LP coin name and symbol for pair `X`/`Y` and curve `Curve`.
     /// ```
     ///
@@ -86,7 +91,7 @@ module liquidswap::coin_helper {
         string::sub_string(&symbol, 0, prefix_length)
     }
 
-    ///@todo review
+    ///@todo review performance ? gas
     public fun genPoolName<X, Y, Curve>(): vector<u8>{
         let x = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
         let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<Y>()));

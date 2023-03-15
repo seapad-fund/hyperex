@@ -8,7 +8,7 @@ u256="0x00"
 uq64x64="0x00"
 
 # Admins
-liquidswap_admin = "0x385514285b7b7499455c8c395c4995baf7ab97ba"
+dex_admin = "0x385514285b7b7499455c8c395c4995baf7ab97ba"
 dao_admin = "0x385514285b7b7499455c8c395c4995baf7ab97ba"
 emergency_admin = "0x385514285b7b7499455c8c395c4995baf7ab97ba"
 fee_admin = "0x385514285b7b7499455c8c395c4995baf7ab97ba"

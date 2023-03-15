@@ -13,6 +13,7 @@ module liquidswap::scripts {
     use liquidswap::dao_storage;
     use liquidswap::lp_coin::LP;
     use liquidswap::lp_coin;
+    use liquidswap::pool_coin;
 
     ///Witness
     /// @todo review
@@ -112,7 +113,7 @@ module liquidswap::scripts {
     ///
     /// Note: X, Y generic coin parameters must be sorted.
     public entry fun remove_liquidity<X, Y, Curve>(
-        lp_coins: Coin<LP<X, Y, Curve>>,
+        lp_coins: pool_coin::Coin<LP<X, Y, Curve>>,
         min_x_out_val: u64,
         min_y_out_val: u64,
         pools: &mut Pools,
