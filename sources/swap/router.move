@@ -519,8 +519,8 @@ module hyperex::router {
     }
 
     #[test_only]
-    public fun current_price<X, Y, Curve>(config: &GlobalConfig, pool: &LiquidityPool<X, Y, Curve>): u128 {
-        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(config, pool);
+    public fun current_price<X, Y, Curve>(config: &GlobalConfig, pools: &mut Pools): u128 {
+        let (x_reserve, y_reserve) = get_reserves_size<X, Y, Curve>(config, pools);
         ((x_reserve / y_reserve) as u128)
     }
 }

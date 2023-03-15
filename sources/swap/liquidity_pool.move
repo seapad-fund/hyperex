@@ -31,7 +31,6 @@ module hyperex::liquidity_pool {
     use sui::test_scenario;
     use sui::balance;
     #[test_only]
-    use hyperex::lp_coin::LP;
     use sui::url::Url;
     use hyperex::pool_coin;
     #[test_only]
@@ -810,7 +809,7 @@ module hyperex::liquidity_pool {
     }
 
     #[test_only]
-    public fun update_cumulative_price_for_test<X, Y, Curve>(
+    public fun update_cumulative_price_for_test<X, Y>(
         prev_last_block_timestamp: u64,
         prev_last_price_x_cumulative: u128,
         prev_last_price_y_cumulative: u128,
@@ -825,7 +824,7 @@ module hyperex::liquidity_pool {
         metaY: &CoinMetadata<Y>,
         ctx: &mut TxContext
     ): (u128, u128, u64) {
-        let witness =  lp_coin::createWitness<X, Y, Curve>();
+        let witness =  lp_coin::createWitness<X, Y, Uncorrelated>();
         register<X, Y, Uncorrelated>(witness, config, pools, daos, metaX, metaY, ctx);
 
         let pool = getPool<X, Y, Uncorrelated>(pools);
