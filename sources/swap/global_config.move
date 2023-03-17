@@ -223,8 +223,6 @@ module hyperex::global_config {
 
     #[test_only]
     public fun initialize_for_test(ctx: &mut TxContext) {
-        //@todo create account for test
-//        let liquidswap_admin = aptos_framework::account::create_account_for_test(@liquidswap);
         initialize(@dex_admin, ctx);
     }
 }

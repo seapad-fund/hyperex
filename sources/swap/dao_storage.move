@@ -7,9 +7,9 @@ module hyperex::dao_storage {
     use sui::coin;
     use sui::event;
     use sui::transfer::share_object;
-    use hyperex::coin_helper;
     use sui::dynamic_field;
     use hyperex::global_config::GlobalConfig;
+    use hyperex::utils::genPoolName;
 
     friend hyperex::liquidity_pool;
 
@@ -47,7 +47,7 @@ module hyperex::dao_storage {
     }
 
     public fun getDao<X, Y, Curve>(daos: &mut Storages): &mut Storage<X, Y, Curve>{
-        let name = coin_helper::genPoolName<X, Y, Curve>();
+        let name = genPoolName<X, Y, Curve>();
         assert!(dynamic_field::exists_<vector<u8>>(&mut daos.id, name), ERR_NOT_REGISTERED);
         dynamic_field::borrow_mut<vector<u8>, Storage<X, Y, Curve>>(&mut daos.id, name)
     }
@@ -62,7 +62,7 @@ module hyperex::dao_storage {
             coin_x: coin::zero<X>(ctx),
             coin_y: coin::zero<Y>(ctx)
         };
-        dynamic_field::add(&mut daos.id, coin_helper::genPoolName<X, Y, Curve>(), dao);
+        dynamic_field::add(&mut daos.id, genPoolName<X, Y, Curve>(), dao);
         event::emit(StorageCreatedEvent<X, Y, Curve> {});
     }
 

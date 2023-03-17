@@ -4,7 +4,6 @@ module hyperex::coin_helper {
 
     use hyperex::curves::is_stable;
     use hyperex::math;
-    use std::vector;
     use std::type_name;
     use sui::coin;
     use hyperex::comparator::Result;
@@ -87,18 +86,6 @@ module hyperex::coin_helper {
         let symbol = string::from_ascii(coin::get_symbol(meta));
         let prefix_length = math::min_u64(string::length(&symbol), SYMBOL_PREFIX_LENGTH);
         string::sub_string(&symbol, 0, prefix_length)
-    }
-
-    ///@todo review performance ? gas
-    public fun genPoolName<X, Y, Curve>(): vector<u8>{
-        let x = std::ascii::as_bytes(&type_name::into_string(type_name::get<X>()));
-        let y = std::ascii::as_bytes(&type_name::into_string(type_name::get<Y>()));
-        let curve = std::ascii::as_bytes(&type_name::into_string(type_name::get<Curve>()));
-        let name = vector::empty<u8>();
-        vector::append(&mut name, *x);
-        vector::append(&mut name, *y);
-        vector::append(&mut name, *curve);
-        name
     }
 
     #[test]

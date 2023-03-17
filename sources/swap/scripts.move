@@ -7,7 +7,7 @@ module hyperex::scripts {
     use hyperex::global_config::GlobalConfig;
     use hyperex::liquidity_pool::{Pools};
     use hyperex::dao_storage::{Storages};
-    use hyperex::lp_coin::LP;
+    use hyperex::lp_coin::{LP, WitnessRegistry};
     use hyperex::lp_coin;
     use hyperex::pool_coin;
 
@@ -19,8 +19,9 @@ module hyperex::scripts {
                                                 daos: &mut Storages,
                                                 metaX: &CoinMetadata<X>,
                                                 metaY: &CoinMetadata<Y>,
+                                                witness_registry: &mut WitnessRegistry,
                                                 ctx: &mut TxContext) {
-        let witness =  lp_coin::createWitness<X, Y, Curve>();
+        let witness =  lp_coin::createOneTimeWitness<X, Y, Curve>(witness_registry);
         router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
     }
 
@@ -43,9 +44,10 @@ module hyperex::scripts {
         metaX: &CoinMetadata<X>,
         metaY: &CoinMetadata<Y>,
         timestamp_ms: u64,
+        registry: &mut WitnessRegistry,
         ctx: &mut TxContext
     ) {
-        let witness = lp_coin::createWitness<X, Y, Curve>();
+        let witness = lp_coin::createOneTimeWitness<X, Y, Curve>(registry);
         router::register_pool<X, Y, Curve>(witness, config, pools, daos, metaX, metaY, ctx);
         add_liquidity<X, Y, Curve>(
             coin_x,

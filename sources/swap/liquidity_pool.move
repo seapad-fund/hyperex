@@ -1,11 +1,10 @@
 /// Liquidswap liquidity pool module.
 /// Implements mint/burn liquidity, swap of coins.
 module hyperex::liquidity_pool {
-
-    use hyperex::lp_coin::LP;
     use u256::u256;
     use uq64x64::uq64x64;
 
+    use hyperex::lp_coin::LP;
     use hyperex::coin_helper;
     use hyperex::curves;
     use hyperex::dao_storage;
@@ -29,12 +28,14 @@ module hyperex::liquidity_pool {
 
     #[test_only]
     use hyperex::curves::Uncorrelated;
+    use hyperex::lp_coin::WitnessRegistry;
 
     use sui::balance;
     use hyperex::pool_coin;
 
     #[test_only]
     use hyperex::lp_coin;
+    use hyperex::utils::genPoolName;
 
     // Error codes.
 
@@ -136,7 +137,7 @@ module hyperex::liquidity_pool {
 
     ///@todo review
     fun isPoolExist<X, Y, Curve>(pools: &mut Pools): bool {
-        dynamic_field::exists_(&pools.id, coin_helper::genPoolName<X,Y,Curve>())
+        dynamic_field::exists_(&pools.id, genPoolName<X,Y,Curve>())
     }
 
     public fun getLPSupply<X,Y, Curve>(pools: &mut Pools): u64{
@@ -170,7 +171,8 @@ module hyperex::liquidity_pool {
             symbol_vec,
             *string::bytes(&lp_name),
             desc,
-            option::none<Url>(), ctx);
+            option::none<Url>(),
+            ctx);
         let x_scale = 0;
         let y_scale = 0;
 
@@ -195,7 +197,7 @@ module hyperex::liquidity_pool {
             dao_fee: global_config::get_default_dao_fee(config),
         };
 
-        let poolName = coin_helper::genPoolName<X, Y, Curve>();
+        let poolName = genPoolName<X, Y, Curve>();
 
         dynamic_field::add<vector<u8>, LiquidityPool<X, Y, Curve>>(&mut pools.id, poolName, pool);
 
@@ -685,7 +687,7 @@ module hyperex::liquidity_pool {
     /// @todo optimize ?
     public fun is_pool_exists<X, Y, Curve>(pools: &Pools): bool {
         assert!(coin_helper::is_sorted<X, Y>(), ERR_WRONG_PAIR_ORDERING);
-        let poolName =  coin_helper::genPoolName<X, Y, Curve>();
+        let poolName =  genPoolName<X, Y, Curve>();
         dynamic_field::exists_(&pools.id, poolName)
     }
 
@@ -739,7 +741,7 @@ module hyperex::liquidity_pool {
 
     /// load pool from pools
     public fun getPool<X, Y, Curve>(pools: &mut Pools): &mut LiquidityPool<X, Y, Curve>{
-        let name = coin_helper::genPoolName<X, Y, Curve>();
+        let name = genPoolName<X, Y, Curve>();
         assert!(dynamic_field::exists_<vector<u8>>(&mut pools.id, name), ERR_POOL_DOES_NOT_EXIST);
         dynamic_field::borrow_mut<vector<u8>, LiquidityPool<X, Y, Curve>>(&mut pools.id, name)
     }
@@ -822,9 +824,10 @@ module hyperex::liquidity_pool {
         daos: &mut Storages,
         metaX: &CoinMetadata<X>,
         metaY: &CoinMetadata<Y>,
+        witness_registry: &mut WitnessRegistry,
         ctx: &mut TxContext
     ): (u128, u128, u64) {
-        let witness =  lp_coin::createWitness<X, Y, Uncorrelated>();
+        let witness =  lp_coin::createOneTimeWitness<X, Y, Uncorrelated>(witness_registry);
         register<X, Y, Uncorrelated>(witness, config, pools, daos, metaX, metaY, ctx);
 
         let pool = getPool<X, Y, Uncorrelated>(pools);

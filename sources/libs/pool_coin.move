@@ -246,7 +246,7 @@ module hyperex::pool_coin {
     // === Registering new coin types and managing the coin supply ===
 
     /// Create a new currency type `T` as and return the `TreasuryCap` for
-    /// `T` to the caller. Can only be called with a `one-time-witness`
+    /// `T` to the caller. Can only be called with a `one-time-witness`R
     /// type, ensuring that there's only one `TreasuryCap` per `T`.
     public fun create_currency<T: drop>(
         witness: T,
@@ -258,7 +258,6 @@ module hyperex::pool_coin {
         ctx: &mut TxContext
     ): (TreasuryCap<T>, CoinMetadata<T>) {
 
-        // Emit Currency metadata as an event.
         event::emit(CurrencyCreated<T> {
             decimals
         });
